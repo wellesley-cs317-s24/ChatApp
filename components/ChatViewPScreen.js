@@ -8,7 +8,9 @@ import { // for Firestore access (to store messages)
   } from "firebase/firestore";
 // New for images:
 import { // for Firebase storage access (to store images)
-         ref, uploadBytes, uploadBytesResumable, getDownloadURL
+         ref, uploadBytes, uploadBytesResumable, getDownloadURL,
+         // for deletion
+          deleteObject
        } from "firebase/storage";
 import { Button } from 'react-native-paper';
 import * as utils from '../utils';
@@ -97,6 +99,7 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
    * adapt it to your purposes.
    */ 
   function debug() {
+    /* 
     const debugObj = {
       channels: channels, 
       selectedChannel: selectedChannel, 
@@ -106,7 +109,24 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
           + " You can remove this button by changing the value of"
           + " displayDebugButton from true to false near the top of"
           + " components/ChatViewScreen.js.\n"
-          + utils.formatJSON(debugObj)); 
+          + utils.formatJSON(debugObj));
+    */
+
+    deleteStorageFile('chatImages/1701562812525');
+    deleteStorageFile('chatImages/1701566536930');    
+  }
+
+  function deleteStorageFile(filename) {
+    console.log(`Deleting storage file ${filename} ... `)
+    // Create a reference to the file to delete
+    const desertRef = ref(storage, filename);
+
+    // Delete the file
+    deleteObject(desertRef).then(() => {
+      console.log(` ... deletion succeeeded`);
+    }).catch((error) => {
+      console.log(` ... deletion failed due to error ${error}`); 
+    });
   }
 
   /**
@@ -547,8 +567,8 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
       <Text>{`usingFirestore=${usingFirestore}`}</Text>
       <View style={globalStyles.buttonHolder}>
         <DebugButton visible={false} />
-        <PopulateButton visible={true} />
-        <ToggleStorageButton visible={true} />
+        <PopulateButton visible={false} />
+        <ToggleStorageButton visible={false} />
         <Button
             mode="contained" 
             style={globalStyles.button}

@@ -7,6 +7,7 @@ import ChatViewPScreen from './components/ChatViewPScreen';
 // import { firebaseConfig } from './firebaseConfig.js'
 import styles from './styles';
 import { emailOf } from './utils';
+
 import { firebaseConfig } from './firebaseConfig.js'
 import { initializeApp } from 'firebase/app';
 import { // access to authentication features:
@@ -93,10 +94,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       { pscreen === "login" &&
-        <SignInOutPScreen 
-          loginProps={loginProps} 
-          auth={auth}
-          setPscreen={changePscreen}/>
+        <SignInOutPScreen changePscreen={changePscreen}/>
       }
       { pscreen === "chat" &&
         /*
