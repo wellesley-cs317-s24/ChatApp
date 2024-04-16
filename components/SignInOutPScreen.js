@@ -1,158 +1,172 @@
-import { useState, useEffect } from "react";
+/**
+ * Example of how to do Firebase authentication 
+ * (email/password signUp, signIn, and signOut) 
+ * in the context of Chat Appp
+ */
+
+import { useState } from "react";
 import { Alert, Text, TextInput, View } from 'react-native';
-import {auth} from '../firebaseInit.js';
-import { // for email/password authentication: 
-         createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification,
+import { auth } from '../firebaseInit.js'; // Firebase authentication object
+import { // for email/password signup (registration):
+         createUserWithEmailAndPassword, sendEmailVerification,
+         // for email/password signin
+         signInWithEmailAndPassword, 
          // for logging out:
          signOut
   } from "firebase/auth";
-import { Button } from 'react-native-paper';
-import { emailOf } from '../utils';
+import { useAuthState } from "react-firebase-hooks/auth" // For tracking state of signed in user
+import { RNPButton } from './RNPButton.js'; // Lyn's wrapper for react-native-paper button
 import styles from '../styles';
 
+/**
+ * PseudoScreen component for authentication. 
+ * 
+ * For simplicity, this combines signUp, signIn, and signOut in a single pseudoscreen,
+ * but in your final projects you may want separate screens for signUp (registration)
+ * and signIn. 
+ * 
+ * Also, signOut typically requires only a signOut button, not an entire screen. 
+ */
 export default function SignInOutPScreen( {changePscreen} ) {
 
   // Default email and password (simplifies testing)
   // const defaultEmail = ... your email here ...
   // const defaultPassword = ... your password here ...
-  const defaultEmail = '';
-  const defaultPassword = ''
+  const defaultEmail = 'lturbak@wellesley.edu';
+  const defaultPassword = 'password'
 
-  const [email, setEmail] = useState(defaultEmail); // Provide default email for testing
-  const [password, setPassword] = useState(defaultPassword); // Provide default passwored for testing
-  const [errorMsg, setErrorMsg] = useState('');
+  /**  State variable for email input; provide default email for testing */
+  const [email, setEmail] = useState(defaultEmail); 
+  /**  State variable for password input; provide default password for testing */
+  const [password, setPassword] = useState(defaultPassword); 
+  /**  State variable for errors and other feedback displayed in red box */
+  const [errorMsg, setErrorMsg] = useState(''); 
+  /**  
+   * Elegant way to track signedInUser in any component.
+   * signedInUser will be null until a user signs up or signs in. 
+   * After a user signs up or signs in, can test: 
+   *   + signedInUser?.email: email of user (undefined if signedInUser is null)
+   *   + signedInUser?.verified: whether signedInUser is verified (undefined if signedInUser is null)
+   */
+  const [signedInUser, authLoading, authError] = useAuthState(auth);
 
-  useEffect(() => {
-      // Executed when entering component
-      console.log('Entering SignInOutPScreen');
-      console.log(`on enter: emailOf(auth.currentUser)=${emailOf(auth.currentUser)}`);
-      if (loginProps.email !== '' && loginProps.password !== '') {
-        // If defaults are provided for email and password, 
-        // use them to log in to avoid the hassle of logging in
-        // console.log(`on enter: attempting to sign in default user ${loginProps.email}`);
-        // signInUserEmailPassword();
-      } 
-      setErrorMsg(''); // Clear any error message
-      // console.log(`on enter: checkEmailVerification()`);
-      // checkEmailVerification();
-
-      return () => {
-        // Executed when exiting component
-        console.log('Exiting SignInOutPScreen');
-        console.log(`on exit: emailOf(auth.currentUser)=${emailOf(auth.currentUser)}`);
-      }
-    }, []);
-
-    function signUpUserEmailPassword() {
-      console.log('called signUpUserEmailPassword');
-      if (auth.currentUser) {
-        signOut(auth); // sign out auth's current user (who is not loggedInUser, 
-                       // or else we wouldn't be here
-      }
-      if (!email.includes('@')) {
-        setErrorMsg('Not a valid email address');
-        return;
-      }
-      if (password.length < 6) {
-        setErrorMsg('Password too short');
-        return;
-      }
-      // Invoke Firebase authentication API for Email/Password sign up 
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          console.log(`signUpUserEmailPassword: sign up for email ${email} succeeded (but email still needs verification).`);
+  /**
+   * Wrapper for auth createUserWithEmailAndPassword function that:
+   *   1. Checks email and password input for valdity
+   *   2. Uses errorMsg to tell user to check for verification email 
+   */
+  async function signUpUserEmailPassword() {
+    // Put any test here for email string validity
+    if (!email.includes('@')) {
+      setErrorMsg('Not a valid email address');
+      return;
+    }
+    // Put any test here for password string validity
+    if (password.length < 6) {
+      setErrorMsg('Password too short');
+      return;
+    }
+    try {
+      // Invoke Firebase authentication API for email/password sign up 
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user; // could also use auth.currentUser
+      console.log(`signUpUserEmailPassword: sign up for email ${user.email} succeeded, but email still needs verification.`);
   
-          // Clear email/password inputs
-          setEmail(defaultEmail);
-          setPassword(defaultPassword);
-  
-          // Note: could store userCredential here if wanted it later ...
-          // console.log(`createUserWithEmailAndPassword: setCredential`);
-          // setCredential(userCredential);
-  
-          // Send verication email
-          console.log('signUpUserEmailPassword: about to send verification email');
-          sendEmailVerification(auth.currentUser)
-          .then(() => {
-              console.log('signUpUserEmailPassword: sent verification email');
-              setErrorMsg(`A verification email has been sent to ${email}. You will not be able to sign in to this account until you click on the verification link in that email.`); 
-              // Email verification sent!
-              // ...
-            });
-        })
-        .catch((error) => {
-          console.log(`signUpUserEmailPassword: sign up failed for email ${email}`);
-          const errorMessage = error.message;
-          // const errorCode = error.code; // Could use this, too.
-          console.log(`createUserWithEmailAndPassword: ${errorMessage}`);
-          setErrorMsg(`createUserWithEmailAndPassword: ${errorMessage}`);
-        });
+      // Send verification email
+      await sendEmailVerification(user);
+      console.log('signUpUserEmailPassword: sent verification email');
+      setErrorMsg(`A verification email has been sent to ${user.email}. You will not be able to sign in to this account until you click on the verification link in that email.`); 
+
+       // Don't clear email/password inputs, because likely to sign in with them. 
+      } catch (error) {
+        console.log(`signUpUserEmailPassword: sign up failed for email ${email}`);
+        const errorMessage = error.message;
+        // const errorCode = error.code; // Could use this, too.
+        console.log(`createUserWithEmailAndPassword: ${errorMessage}`);
+        setErrorMsg(`signUp: ${errorMessage}`);
+      };
     }
 
-    function signInUserEmailPassword() {
-      console.log('called signInUserEmailPassword');
-      console.log(`signInUserEmailPassword: emailOf(currentUser)0=${emailOf(auth.currentUser)}`); 
-      // Invoke Firebase authentication API for Email/Password sign in 
-      // Use Email/Password for authentication 
-      signInWithEmailAndPassword(auth, email, password)
-                                 /* 
-                                 defaultEmail ? defaultEmail : email, 
-                                 defaultPassword ? defaultPassword : password
-                                 */
-        .then((userCredential) => {
-          console.log(`signInUserEmailPassword succeeded for email ${email}; have userCredential for emailOf(auth.currentUser)=${emailOf(auth.currentUser)} (but may not be verified)`); 
-          console.log(`signInUserEmailPassword: emailOf(currentUser)1=${emailOf(auth.currentUser)}`); 
-  
-          // Only log in auth.currentUser if their email is verified
-          checkEmailVerification();
-  
-          // Clear email/password inputs 
-          loginProps.setEmail(defaultEmail);
-          loginProps.setPassword(defaultPassword);
-  
-          // Note: could store userCredential here if wanted it later ...
-          // console.log(`createUserWithEmailAndPassword: setCredential`);
-          // setCredential(userCredential);
-      
-          })
-        .catch((error) => {
-          console.log(`signUpUserEmailPassword: sign in failed for email ${email}`);
-          const errorMessage = error.message;
-          // const errorCode = error.code; // Could use this, too.
-          console.log(`signInUserEmailPassword: ${errorMessage}`);
-          setErrorMsg(`signInUserEmailPassword: ${errorMessage}`);
-        });
-    }
-  
-    function checkEmailVerification() {
-      if (auth.currentUser) {
-        console.log(`checkEmailVerification: auth.currentUser.emailVerified=${auth.currentUser.emailVerified}`);
-        if (auth.currentUser.emailVerified) {
-          // console.log(`checkEmailVerification: setLoggedInUser for ${auth.currentUser.email}`);
-          // loginProps.setLoggedInUser(auth.currentUser);
-          console.log("checkEmailVerification: setErrorMsg('')");
-          setErrorMsg('');
-          changePscreen('chat'); // Go to the Chat PseudoScreen
-        } else {
-          console.log('checkEmailVerification: remind user to verify email');
-          setErrorMsg(`You cannot sign in as ${auth.currentUser.email} until you verify that this is your email address. You can verify this email address by clicking on the link in a verification email sent by this app to ${auth.currentUser.email}.`)
-        }
+  /**
+   * Wrapper for auth signInWithEmailAndPassword function that:
+   *   1. Verifies that signed in user is verified (and otherwise reminds
+   *      them to verify if not)
+   *   2. Sets email and password inputs back to defaults 
+   *   3. Navigates to chat pScreen if user is verified 
+   */
+  async function signInUserEmailPassword() {
+    try {
+      // Invoke Firebase authentication API for email/password sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user; // could also use auth.currentUser
+      console.log(`signInUserEmailPassword succeeded for user?.email=${user?.email}`);
+
+      // Only log in user if their email is verified
+      if (checkEmailVerification(user)) {
+        // setSignedInUser(user);
+        changePscreen('chat'); // Go to the Chat PseudoScreen
       }
+
+      // Clear email/password inputs 
+      setEmail(defaultEmail);
+      setPassword(defaultPassword);
+
+    } catch (error) {
+      console.log(`signInUserEmailPassword failed for email=${email}`);
+      const errorMessage = error.message;
+      console.log(`signInUserEmailPassword errorMessage=${errorMessage}`);
+      setErrorMsg(`signIn: ${errorMessage}`);
     }
+  }
+  
+  /**
+   * 
+   * @param {*} user 
+   * @returns boolean indicating whether user.email is verified 
+   * Also sets errorMsg in case where user.email is not verified. 
+   */
+  function checkEmailVerification(user) {
+    if (user.emailVerified) {
+      console.log(`${user.email} is verified`);
+       setErrorMsg(''); // clear any previous error message
+       return true;
+    } else {
+      console.log(`${user.email} is not verified`);
+      // Remind user to verify email
+      setErrorMsg(`You cannot sign in as ${user.email} until you verify that this is your email address. You can verify this email address by clicking on the link in a verification email sent by this app to ${user.email}.`)
+      return false; 
+    }
+  }
+
+  /**
+   * Logs out current user.
+   * @returns undefined
+   */
+  async function logOut() {
+    await signOut(auth);
+  }
+
+  /**
+   * @returns bool indicating whether SignIn/SignUp buttons should be disabled. 
+   */
+  function signInUpDisabled() {
+    return false; // Can replace this stub; see example below
+    // Example of conditions for disabling buttons; change these to suit your situation 
+    // return !email.includes('@') || password.length < 4
+  }
 
   return (
     <View style={styles.screen}>
-      <View style={loginProps.loggedInUser === null ? styles.signInOutPane : styles.hidden}>
-        <Text>SignInPane</Text>
+      <View style={signedInUser?.emailVerified ? styles.hidden : styles.signInOutPane}>
         <View style={styles.labeledInput}>
             <Text style={styles.inputLabel}>Email:</Text>
             <TextInput 
               placeholder="Enter your email address" 
               style={styles.textInput} 
-              value={loginProps.email} 
+              value={email} 
               onChangeText={ 
                 text => {
-                  loginProps.setEmail(text);
+                  setEmail(text);
                   setErrorMsg(''); // Clear any error message
                 }
               } />
@@ -162,43 +176,34 @@ export default function SignInOutPScreen( {changePscreen} ) {
             <TextInput 
               placeholder="Enter your password" 
               style={styles.textInput} 
-              value={loginProps.password} 
+              value={password} 
               onChangeText={ 
                 text => {
-                  loginProps.setPassword(text);
+                  setPassword(text);
                   setErrorMsg(''); // Clear any error message
                 }
               }/>
           </View>
           <View style={styles.buttonHolder}>
-            <Button
-              mode="contained" 
-              style={styles.button}
-              labelStyle={styles.buttonText}
-              onPress={() => signInUserEmailPassword()}>
-                Sign In
-            </Button>
-            <Button
-              mode="contained" 
-              style={styles.button}
-              labelStyle={styles.buttonText}
-              onPress={() => signUpUserEmailPassword()}>
-                Sign Up
-            </Button>
+            <RNPButton 
+              title="Sign In" 
+              onPress={signInUserEmailPassword}
+              disabled={signInUpDisabled()}
+            />
+            <RNPButton 
+              title="Sign Up" 
+              onPress={signUpUserEmailPassword}
+              disabled={signInUpDisabled()}
+            />
           </View>
           <View style={errorMsg === '' ? styles.hidden : styles.errorBox}>
             <Text style={styles.errorMessage}>{errorMsg}</Text>
           </View>
       </View>
-      <View style={loginProps.loggedInUser === null ? styles.hidden : styles.signInOutPane }>
-            <Button
-              mode="contained" 
-              style={styles.button}
-              labelStyle={styles.buttonText}
-              onPress={() => loginProps.logOut()}>
-                Sign Out
-            </Button>
-     </View>
+      <View style={signedInUser?.emailVerified ? styles.signInOutPane : styles.hidden }>
+        <Text>You are signed in as {signedInUser?.email}</Text>
+        <RNPButton title="Sign Out" onPress={logOut}/>
+      </View>
     </View>
  );
 

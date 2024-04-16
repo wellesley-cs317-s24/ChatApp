@@ -8,11 +8,13 @@ import { // for Firestore access (to store messages)
   } from "firebase/firestore";
 // New for images:
 import { // for Firebase storage access (to store images)
-         ref, uploadBytes, uploadBytesResumable, getDownloadURL,
+         ref, uploadBytesResumable, getDownloadURL,
          // for deletion
           deleteObject
        } from "firebase/storage";
-import { Button } from 'react-native-paper';
+import { auth, db, storage } from '../firebaseInit.js'; // Firebase authentication and storage objects
+import { useAuthState } from "react-firebase-hooks/auth" // For tracking state of signed in user
+import { RNPButton } from './RNPButton.js'; // Lyn's wrapper for react-native-paper button
 import * as utils from '../utils';
 import globalStyles from '../styles';
 import { testMessages } from '../fakeData';
@@ -20,10 +22,16 @@ import { testMessages } from '../fakeData';
 // Default initial channels
 const defaultChannels = ['Arts', 'Crafts', 'Food', 'Gatherings', 'Outdoors'];
 
-export default function ChatViewPScreen( {firebaseProps, loginProps}) {
-  const auth = firebaseProps.auth;
-  const db = firebaseProps.db;
-  const storage = firebaseProps.storage;
+export default function ChatViewPScreen() {
+
+  /**  
+   * Elegant way to track signedInUser in any component.
+   * signedInUser will be null until a user signs up or signs in. 
+   * After a user signs up or signs in, can test: 
+   *   + signedInUser?.email: email of user (undefined if signedInUser is null)
+   *   + signedInUser?.verified: whether signedInUser is verified (undefined if signedInUser is null)
+   */
+  const [signedInUser, authLoading, authError] = useAuthState(auth);
 
   // State for chat channels and messages
   const [channels, setChannels] = useState(defaultChannels);
@@ -46,35 +54,35 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
    CHAT CHANNEL/MESSAGE CODE
    ***************************************************************************/
 
-  // Get messages for current channel when entering ChatViewPScreen. 
-  useEffect(() => {
+   /**
+   * useEffect is a hook for running code when either 
+   *   1. The component is entered (created) or exited (destroyed)
+   *   2. One of the state variables in the list of dependencies changes.
+   * 
+   * This code gets messages for current channel when entering ChatViewPScreen.
+   * This is *not* the best way to get messages, since it can lead to 
+   * Firestore quota exceeded errors! We will see later how do use
+   * onSnapshot to avoid this issue. 
+   */
+
+  // Update messages when selectedChannel, localMessageDB, or usingFirestore changes
+  useEffect(
+    () => { 
       // Executed when entering component
       console.log('Entering ChatViewPScreen');
-
-      // console.log(`on enter: getMessagesForChannel('${selectedChannel}')`);
-      // getMessagesForChannel(selectedChannel); // find messages when enter component 
+      getMessagesForChannel(selectedChannel); 
 
       return () => {
         // Executed when exiting component
         console.log('Exiting ChatViewPScreen');
       }
-    }, []);
-
-  // Update messages when selectedChannel, localMessageDB, or usingFirestore changes
-  useEffect(
-    () => { 
-      console.log('Channel/message effect fired!');
-      getMessagesForChannel(selectedChannel); 
-      /* setTextInputValue(''); // empirically need on iOS to prevent keeping 
-                             // text completion from most recent post
-       */
     },
-    [selectedChannel, localMessageDB, usingFirestore]
+    [selectedChannel, localMessageDB, usingFirestore, signedInUser]
   ); 
 
   /**
    * Button for displaying debugging information within app itself. 
-   * The button is displayed only if displayDebugButton is true
+   * The button is displayed only if visible property is true. 
    */ 
   function DebugButton( {visible} ) {
     if (visible) {
@@ -110,23 +118,7 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
           + " displayDebugButton from true to false near the top of"
           + " components/ChatViewScreen.js.\n"
           + utils.formatJSON(debugObj));
-    */
-
-    deleteStorageFile('chatImages/1701562812525');
-    deleteStorageFile('chatImages/1701566536930');    
-  }
-
-  function deleteStorageFile(filename) {
-    console.log(`Deleting storage file ${filename} ... `)
-    // Create a reference to the file to delete
-    const desertRef = ref(storage, filename);
-
-    // Delete the file
-    deleteObject(desertRef).then(() => {
-      console.log(` ... deletion succeeeded`);
-    }).catch((error) => {
-      console.log(` ... deletion failed due to error ${error}`); 
-    });
+    */  
   }
 
   /**
@@ -136,15 +128,12 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
     function ToggleStorageButton( {visible} ) {
       if (visible) {
         return (
-          <Button
-            mode="contained" 
-            style={globalStyles.button}
-            labelStyle={globalStyles.smallButtonText}
-            onPress={toggleStorageMode}>
-            {usingFirestore ? 
-                'Using Firestore; Click for localDB' :
-                'Using localDB; Click for Firestore'}
-          </Button>
+          <RNPButton
+            title={usingFirestore ? 
+              'Using Firestore; Click for localDB' :
+              'Using localDB; Click for Firestore'}
+            onPress={toggleStorageMode}
+          />
         ); 
       } else {
         return false; // No component will be rendered
@@ -168,13 +157,10 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
   function PopulateButton( {visible} ) {
     if (visible) {
       return (
-        <Button
-          mode="contained" 
-          style={globalStyles.button}
-          labelStyle={globalStyles.buttonText}
-          onPress={() =>populateFirestoreDB(testMessages)}>
-          Populate Firestore
-        </Button>
+        <RNPButton
+          title="Populate Firestore"
+          onPress={() => populateFirestoreDB(testMessages)}
+        />
       ); 
     } else {
       return false; // No component will be rendered
@@ -461,7 +447,7 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
       const now = new Date();
       const timestamp = now.getTime(); // millsecond timestamp
       const newMessage = {
-        'author': loginProps.loggedInUser.email, 
+        'author': signedInUser?.email, 
         'date': now, 
         'timestamp': timestamp, 
         'channel': selectedChannel, 
@@ -507,28 +493,19 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
           />
         }
         <View style={globalStyles.buttonHolder}>
-          <Button
-            mode="contained" 
-            style={globalStyles.button}
-            labelStyle={globalStyles.buttonText}
-            onPress={cancelMessage}>
-            Cancel
-          </Button>
+          <RNPButton
+            title="Cancel"
+            onPress={cancelMessage}/>
+
           {/* New for images: a button to add an image. */}
-          <Button
-            mode="contained" 
-            style={globalStyles.button}
-            labelStyle={globalStyles.buttonText}
-            onPress={addImageToMessage}>
-            Add Image
-          </Button>
-          <Button
-            mode="contained" 
-            style={globalStyles.button}
-            labelStyle={globalStyles.buttonText}
-            onPress={postMessage}>
-            Post
-          </Button>
+          <RNPButton
+            title="Add Image"
+            onPress={addImageToMessage}
+            />
+          <RNPButton
+            title="Post"
+            onPress={postMessage}
+            />
         </View>
       </View>
     );
@@ -562,24 +539,26 @@ export default function ChatViewPScreen( {firebaseProps, loginProps}) {
   }
 
   return (
-    <View style={globalStyles.screen}>
-      <Text>{utils.emailOf(loginProps.loggedInUser)} is logged in</Text>
+    <>
+    <View style={signedInUser?.emailVerified ? globalStyles.hidden : globalStyles.screen }>
+      <Text>No user is logged in yet.</Text>
+    </View>
+    <View style={signedInUser?.emailVerified ? globalStyles.screen : globalStyles.hidden }>
+      <Text>{signedInUser?.email} is logged in</Text>
       <Text>{`usingFirestore=${usingFirestore}`}</Text>
       <View style={globalStyles.buttonHolder}>
         <DebugButton visible={false} />
         <PopulateButton visible={false} />
         <ToggleStorageButton visible={false} />
-        <Button
-            mode="contained" 
-            style={globalStyles.button}
-            labelStyle={globalStyles.buttonText}
-            onPress={composeMessage}>
-            Compose Message
-        </Button>
+        <RNPButton
+            title="Compose Message"
+            onPress={composeMessage}
+        />
       </View> 
       <ComposeMessagePane/>
       <DisplayMessagePane/>
     </View>
+  </>
   );
 }
 

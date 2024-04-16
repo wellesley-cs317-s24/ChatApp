@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 
 export default StyleSheet.create({
-    screen: {
+  screen: {
       flex: 1,
       paddingTop: Constants.statusBarHeight,
       backgroundColor: '#fff',
@@ -20,25 +20,25 @@ export default StyleSheet.create({
       padding: 10, 
       color: 'blue', 
   },
-    subComponentContainer: {
+  subComponentContainer: {
       padding: 10, 
       color: 'blue', 
       borderWidth: 1,
       borderStyle: 'dashed', // Lyn sez: doesn't seem to work 
       borderColor: 'coral',
       backgroundColor: 'pink',
-    },
-    buttonHolder: {
+  },
+  buttonHolder: {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: 'center',
-    },
-    hidden: {
+  },
+  hidden: {
       display: 'none',
-    },
-    visible: {
+  },
+  visible: {
       display: 'flex',
-    },
+  },
   loginLogoutPane: {
       flex: 3, 
       alignItems: 'center',
@@ -68,14 +68,13 @@ export default StyleSheet.create({
       justifyContent: 'center',
       flexDirection: "row",
       flexWrap: 'wrap',
-
   },
   button: {
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 10,
       elevation: 3,
-      backgroundColor: 'steelblue',
+      // backgroundColor: 'steelblue',
       margin: 3,
   },
   buttonDisabled: {
@@ -83,7 +82,7 @@ export default StyleSheet.create({
       justifyContent: 'center',
       borderRadius: 10,
       elevation: 3,
-      backgroundColor: 'powderblue',
+      // backgroundColor: 'powderblue',
       margin: 3,
   },
   buttonText: {
@@ -177,8 +176,8 @@ export default StyleSheet.create({
     flex: 3, 
     alignItems: 'center',
     justifyContent: 'center',
-},
-container: {
+ },
+ container: {
     flex: 1,
     justifyContent: 'center',
     backgroundColor: '#ecf0f1',
