@@ -103,8 +103,7 @@ export default function ChatViewPScreen() {
    * This is just an example of displaying debugging information; 
    * adapt it to your purposes.
    */ 
-  function debug() {
-    /* 
+  async function debug() {
     const debugObj = {
       channels: channels, 
       selectedChannel: selectedChannel, 
@@ -114,8 +113,21 @@ export default function ChatViewPScreen() {
           + " You can remove this button by changing the value of"
           + " displayDebugButton from true to false near the top of"
           + " components/ChatViewScreen.js.\n"
-          + utils.formatJSON(debugObj));
-    */  
+          + utils.formatJSON(debugObj)); 
+  }
+
+  function deleteStorageFile(filename) {
+    console.log(`Deleting storage file ${filename} ... `)
+    // Create a reference to the file to delete
+    const desertRef = ref(storage, filename);
+
+    // Delete the file
+    try {
+      await deleteObject(desertRef)
+      console.log(` ... deletion succeeeded`);
+    } catch((error) {
+      console.log(` ... deletion failed due to error ${error}`); 
+    });
   }
 
   /**
