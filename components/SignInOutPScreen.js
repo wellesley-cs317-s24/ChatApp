@@ -32,8 +32,8 @@ export default function SignInOutPScreen( {changePscreen} ) {
   // Default email and password (simplifies testing)
   // const defaultEmail = ... your email here ...
   // const defaultPassword = ... your password here ...
-  const defaultEmail = 'lturbak@wellesley.edu';
-  const defaultPassword = 'password'
+  const defaultEmail = '';
+  const defaultPassword = ''
 
   /**  State variable for email input; provide default email for testing */
   const [email, setEmail] = useState(defaultEmail); 
@@ -46,7 +46,7 @@ export default function SignInOutPScreen( {changePscreen} ) {
    * signedInUser will be null until a user signs up or signs in. 
    * After a user signs up or signs in, can test: 
    *   + signedInUser?.email: email of user (undefined if signedInUser is null)
-   *   + signedInUser?.verified: whether signedInUser is verified (undefined if signedInUser is null)
+   *   + signedInUser?.emailVerified: whether signedInUser is verified (undefined if signedInUser is null)
    */
   const [signedInUser, authLoading, authError] = useAuthState(auth);
 
