@@ -125,9 +125,9 @@ export default function ChatViewPScreen() {
     try {
       await deleteObject(desertRef)
       console.log(` ... deletion succeeeded`);
-    } catch((error) {
+    } catch(error) {
       console.log(` ... deletion failed due to error ${error}`); 
-    });
+    }
   }
 
   /**
