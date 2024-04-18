@@ -169,7 +169,13 @@ export default function SignInOutPScreen( {changePscreen} ) {
                   setEmail(text);
                   setErrorMsg(''); // Clear any error message
                 }
-              } />
+              }
+              // Helpful settings from CS317 F23 final project team TasteBuds:
+              keyboardType="email-address"
+              autoCorrect={false}
+              autoCapitalize="none"
+              autoComplete="off"
+            /> 
           </View>
           <View style={styles.labeledInput}>
             <Text style={styles.inputLabel}>Password:</Text>
@@ -182,7 +188,13 @@ export default function SignInOutPScreen( {changePscreen} ) {
                   setPassword(text);
                   setErrorMsg(''); // Clear any error message
                 }
-              }/>
+              }
+              // Helpful settings from CS317 F23 final project team TasteBuds:
+              keyboardType="email-address"
+              autoCorrect={false}
+              autoCapitalize="none"
+              autoComplete="off"
+              />
           </View>
           <View style={styles.buttonHolder}>
             <RNPButton 
