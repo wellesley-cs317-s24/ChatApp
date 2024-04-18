@@ -116,7 +116,7 @@ export default function ChatViewPScreen() {
           + utils.formatJSON(debugObj)); 
   }
 
-  function deleteStorageFile(filename) {
+  function async deleteStorageFile(filename) {
     console.log(`Deleting storage file ${filename} ... `)
     // Create a reference to the file to delete
     const desertRef = ref(storage, filename);
