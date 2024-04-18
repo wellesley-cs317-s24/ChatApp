@@ -87,13 +87,10 @@ export default function ChatViewPScreen() {
   function DebugButton( {visible} ) {
     if (visible) {
       return (
-        <Button
-          mode="contained" 
-          style={globalStyles.button}
-          labelStyle={globalStyles.buttonText}
-          onPress={debug}>
-          Debug
-        </Button>
+        <RNPButton
+          title='Debug'
+          onPress={debug}
+        />
       ); 
     } else {
       return false; // No component will be rendered
@@ -547,9 +544,9 @@ export default function ChatViewPScreen() {
       <Text>{signedInUser?.email} is logged in</Text>
       <Text>{`usingFirestore=${usingFirestore}`}</Text>
       <View style={globalStyles.buttonHolder}>
-        <DebugButton visible={false} />
-        <PopulateButton visible={false} />
-        <ToggleStorageButton visible={false} />
+        <DebugButton visible={true} />
+        <PopulateButton visible={true} />
+        <ToggleStorageButton visible={true} />
         <RNPButton
             title="Compose Message"
             onPress={composeMessage}
