@@ -32,8 +32,10 @@ export default function SignInOutPScreen( {changePscreen} ) {
   // Default email and password (simplifies testing)
   // const defaultEmail = ... your email here ...
   // const defaultPassword = ... your password here ...
-  const defaultEmail = '';
-  const defaultPassword = ''
+  const defaultEmail = 'fturbak@gmail.com';
+  const defaultPassword = 'password'
+  // const defaultEmail = '';
+  // const defaultPassword = ''
 
   /**  State variable for email input; provide default email for testing */
   const [email, setEmail] = useState(defaultEmail); 
@@ -104,7 +106,7 @@ export default function SignInOutPScreen( {changePscreen} ) {
       // Only log in user if their email is verified
       if (checkEmailVerification(user)) {
         // setSignedInUser(user);
-        changePscreen('chat'); // Go to the Chat PseudoScreen
+        changePscreen('test'); // Go to the Test Firestore PseudoScreen in this branch
       }
 
       // Clear email/password inputs 

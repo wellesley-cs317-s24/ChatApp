@@ -3,6 +3,7 @@ import { Text, View, SafeAreaView } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
 import SignInOutPScreen from './components/SignInOutPScreen';
 import ChatViewPScreen from './components/ChatViewPScreen';
+import TestFirestorePScreen from './components/TestFirestorePScreen';
 import { auth } from './firebaseInit.js'; // Firebase authentication object
 import { useAuthState } from "react-firebase-hooks/auth" // For tracking state of signed in user
 import styles from './styles';
@@ -30,7 +31,7 @@ export default function App() {
     console.log('Entering App component');
     if (signedInUser?.emailVerified) {
       console.log('User already signed in on App launch, so start in chat screen'); 
-      changePscreen('chat');
+      changePscreen('test');
     }
 
     return () => {
@@ -54,7 +55,10 @@ export default function App() {
       }
       { pscreen === "chat" &&
         <ChatViewPScreen/>
-     }
+      }
+      { pscreen === "test" &&
+        <TestFirestorePScreen/>
+      }
       <View style={{width: '100%'}}>
       <SegmentedButtons
         style={styles.pscreenButtons}
@@ -68,6 +72,10 @@ export default function App() {
           {
             value: 'chat',
             label: 'Chat',
+          },
+          {
+            value: 'test',
+            label: 'Test Firestore',
           },
         ]}
       />
