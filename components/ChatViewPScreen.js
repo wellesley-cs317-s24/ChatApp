@@ -5,7 +5,7 @@ import { RNPButton } from './RNPButton.js'; // Lyn's wrapper for react-native-pa
 import { auth, db, storage } from '../firebaseInit.js'; // Firebase authentication and storage objects
 import { useAuthState } from "react-firebase-hooks/auth" // For tracking state of signed in user
 // for Firestore access (to store messages)
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, onSnapshot } from "firebase/firestore";
 // for Firebase storage access (to store images)
 import { ref,  deleteObject } from "firebase/storage";
 import * as utils from '../utils';
@@ -48,16 +48,16 @@ export default function ChatViewPScreen(
   useEffect(
     () => { 
       console.log('Entering ChatViewPScreen');
-      async function fetchMessages () {
-      // Executed when entering component
-        const messages = await getMessagesForChannel(selectedChannel);
-        const lastMessage = messages[messages.length-1].content;
-        console.log('most recent messages content is:', content);
-      }
-      fetchMessages();
+      const q = query(collection(db, 'messages'), where('channel', '==', selectedChannel));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const messages = querySnapshot.docs.map(doc => docToMessage(doc));
+        setSelectedMessages( messages );
+        });
+      
       return () => {
         // Executed when exiting component
         console.log('Exiting ChatViewPScreen');
+        unsubscribe();
       }
     },
     // If any of the following dependencies changes, execute effect again
