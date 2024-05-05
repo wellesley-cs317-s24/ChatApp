@@ -103,13 +103,11 @@ export default function SignInOutPScreen( {changePscreen} ) {
 
       // Only log in user if their email is verified
       if (checkEmailVerification(user)) {
-        // setSignedInUser(user);
+        // Clear email/password inputs 
+        setEmail(defaultEmail);
+        setPassword(defaultPassword);
         changePscreen('chat'); // Go to the Chat PseudoScreen
       }
-
-      // Clear email/password inputs 
-      setEmail(defaultEmail);
-      setPassword(defaultPassword);
 
     } catch (error) {
       console.log(`signInUserEmailPassword failed for email=${email}`);
